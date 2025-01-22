@@ -34,6 +34,6 @@ func startServers(cfg *config.Config) *httpserver.Server {
 
 func shutdown(server *httpserver.Server, log *zap.Logger) {
 	if shutdownErr := server.Shutdown(); shutdownErr != nil {
-		log.Error("app - Run - httpServer.Shutdown: %w", zap.Error(shutdownErr))
+		log.Error("httpServer.Shutdown: %w", zap.Error(shutdownErr))
 	}
 }
