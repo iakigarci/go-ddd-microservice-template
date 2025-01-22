@@ -3,26 +3,21 @@ package main
 import (
 	"log"
 
-	"github.com/gin-gonic/gin"
+	"github.com/iakigarci/go-ddd-microservice-template/config"
+	"github.com/iakigarci/go-ddd-microservice-template/internal/adapters/inbound/http"
+	httpserver "github.com/iakigarci/go-ddd-microservice-template/pkg/http"
 )
 
 func main() {
-	// Initialize Gin router
-	router := gin.Default()
+	cfg, err := config.LoadConfig[config.Config]()
+	if err != nil {
+		log.Fatalf("Failed to load configuration: %v", err)
+	}
 
-	// Basic middleware
-	router.Use(gin.Logger())
-	router.Use(gin.Recovery())
+	router := http.NewRouter()
+	server := httpserver.New(cfg, router)
 
-	// Health check endpoint
-	router.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"status": "ok",
-		})
-	})
-
-	// Start the server
-	if err := router.Run(":8080"); err != nil {
+	if err := <-server.Notify(); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }
