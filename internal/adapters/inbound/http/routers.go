@@ -12,6 +12,7 @@ func NewRouter(config *config.Config) *gin.Engine {
 	router := gin.Default()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
+	router.Use(CORSMiddleware())
 
 	indexRoutes := router.Group("/")
 	{

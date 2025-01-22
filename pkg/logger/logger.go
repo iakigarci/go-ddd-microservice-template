@@ -1,4 +1,4 @@
-package clients
+package logger
 
 import (
 	"sync"
@@ -13,20 +13,20 @@ var (
 	once     sync.Once
 )
 
-func GetLogger(currentLevel config.LogLevel, subsystem string) *zap.Logger {
+func New(cfg *config.Config) *zap.Logger {
 	once.Do(func() {
-		instance = initLogger(currentLevel, subsystem)
+		instance = initLogger(cfg)
 	})
 	return instance
 }
 
-func initLogger(currentLevel config.LogLevel, subsystem string) *zap.Logger {
+func initLogger(cfg *config.Config) *zap.Logger {
 	var level zapcore.Level
-	if currentLevel == config.None {
+	if cfg.Logging.Level == config.None {
 		return zap.NewNop()
 	}
 
-	err := level.UnmarshalText([]byte(currentLevel))
+	err := level.UnmarshalText([]byte(cfg.Logging.Level))
 	if err != nil {
 		level = zapcore.InfoLevel
 	}
@@ -57,7 +57,6 @@ func initLogger(currentLevel config.LogLevel, subsystem string) *zap.Logger {
 
 	logger, err := config.Build(
 		zap.AddCallerSkip(1),
-		zap.Fields(zap.String("subsystem", subsystem)),
 	)
 	if err != nil {
 		logger, _ = zap.NewProduction()
