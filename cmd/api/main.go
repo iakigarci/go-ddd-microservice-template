@@ -4,7 +4,8 @@ import (
 	"log"
 
 	"github.com/iakigarci/go-ddd-microservice-template/config"
-	"github.com/iakigarci/go-ddd-microservice-template/internal/adapters/inbound/http"
+	di "github.com/iakigarci/go-ddd-microservice-template/internal"
+	http_gin "github.com/iakigarci/go-ddd-microservice-template/internal/adapters/v1/inbound/http"
 	httpserver "github.com/iakigarci/go-ddd-microservice-template/pkg/http"
 	"github.com/iakigarci/go-ddd-microservice-template/pkg/logger"
 	"go.uber.org/zap"
@@ -18,22 +19,34 @@ func main() {
 
 	logger := logger.New(cfg)
 
-	httpServer := startServers(cfg)
+	container := getDIContainer(cfg, logger)
+	httpServer := startServers(cfg, container)
+
 	if err := <-httpServer.Notify(); err != nil {
-		logger.Error("Failed to start server: %v", zap.Error(err))
+		logger.Error("Failed to start server", zap.Error(err))
 	}
 
-	shutdown(httpServer, logger)
+	shutdown(httpServer, container, logger)
 }
 
-func startServers(cfg *config.Config) *httpserver.Server {
-	router := http.NewRouter(cfg)
-	server := httpserver.New(cfg, router)
+func getDIContainer(cfg *config.Config, logger *zap.Logger) *di.Container {
+	return di.NewContainer(cfg,
+		logger,
+	)
+}
+
+func startServers(cfg *config.Config, container *di.Container) *httpserver.Server {
+	router := http_gin.New(cfg, container)
+	server := httpserver.New(cfg, router.Router)
 	return server
 }
 
-func shutdown(server *httpserver.Server, log *zap.Logger) {
+func shutdown(server *httpserver.Server, container *di.Container, log *zap.Logger) {
 	if shutdownErr := server.Shutdown(); shutdownErr != nil {
-		log.Error("httpServer.Shutdown: %w", zap.Error(shutdownErr))
+		log.Error("httpServer.Shutdown", zap.Error(shutdownErr))
+	}
+
+	if err := container.Shutdown(); err != nil {
+		log.Error("container.Shutdown", zap.Error(err))
 	}
 }
