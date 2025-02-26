@@ -5,7 +5,7 @@ import (
 
 	"github.com/iakigarci/go-ddd-microservice-template/config"
 	di "github.com/iakigarci/go-ddd-microservice-template/internal"
-	http_gin "github.com/iakigarci/go-ddd-microservice-template/internal/adapters/v1/inbound/http"
+	http_gin "github.com/iakigarci/go-ddd-microservice-template/internal/adapters/inbound/rest"
 	httpserver "github.com/iakigarci/go-ddd-microservice-template/pkg/http"
 	"github.com/iakigarci/go-ddd-microservice-template/pkg/logger"
 	"go.uber.org/zap"
@@ -36,8 +36,9 @@ func getDIContainer(cfg *config.Config, logger *zap.Logger) *di.Container {
 }
 
 func startServers(cfg *config.Config, container *di.Container) *httpserver.Server {
-	router := http_gin.New(cfg, container)
-	server := httpserver.New(cfg, router.Router)
+	httpServer := http_gin.New(cfg, container)
+
+	server := httpserver.New(cfg, httpServer.Router)
 	return server
 }
 
