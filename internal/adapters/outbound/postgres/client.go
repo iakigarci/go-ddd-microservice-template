@@ -4,15 +4,18 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/iakigarci/go-ddd-microservice-template/config"
+	"github.com/iakigarci/go-ddd-microservice-template/pkg/logger"
+	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
 )
 
 const (
-	_defaultConnAttempts = 10
+	_defaultConnAttempts = 5
 	_defaultConnTimeout  = time.Second
 )
 
@@ -21,39 +24,40 @@ type Postgres struct {
 	connAttempts int
 	connTimeout  time.Duration
 
-	DB     *sql.DB
-	logger *zap.Logger
+	DB     *sqlx.DB
+	logger *logger.Logger
 }
 
-func New(config *config.Config, logger *zap.Logger) (*Postgres, error) {
-	postgres, err := initPg(config, logger)
+func NewClient(cfg *config.Config, logger *logger.Logger) (*Postgres, error) {
+	postgres, err := initPg(cfg, logger)
 	if err != nil {
 		logger.Error("failed to initialize postgres client", zap.Error(err))
 		return nil, err
 	}
+
 	return postgres, nil
 }
 
-func initPg(config *config.Config, logger *zap.Logger) (*Postgres, error) {
+func initPg(cfg *config.Config, logger *logger.Logger) (*Postgres, error) {
 	pg := &Postgres{
-		maxPoolSize:  config.Postgres.PoolMax,
+		maxPoolSize:  cfg.Postgres.PoolMax,
 		connAttempts: _defaultConnAttempts,
 		connTimeout:  _defaultConnTimeout,
 		logger:       logger,
 	}
 
+	connectionString := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
+		cfg.Postgres.Host,
+		cfg.Postgres.Port,
+		cfg.Postgres.User,
+		cfg.Postgres.Password,
+		cfg.Postgres.DBName,
+		cfg.Postgres.SSLMode,
+	)
+
 	var err error
 	for pg.connAttempts > 0 {
-		pg.DB, err = sql.Open("postgres",
-			fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-				config.Postgres.Host,
-				config.Postgres.Port,
-				config.Postgres.User,
-				config.Postgres.Password,
-				config.Postgres.Name,
-				config.Postgres.SSLMode,
-			),
-		)
+		pg.DB, err = sqlx.Open("postgres", connectionString)
 		if err == nil {
 			pg.DB.SetMaxOpenConns(pg.maxPoolSize)
 			pg.DB.SetMaxIdleConns(pg.maxPoolSize)
@@ -63,14 +67,21 @@ func initPg(config *config.Config, logger *zap.Logger) (*Postgres, error) {
 			}
 		}
 
-		pg.logger.Info("Postgres is trying to connect, attempts left", zap.Int("attempts", pg.connAttempts))
+		pg.logger.InfoAttrs("Postgres trying to connect, attempts left", map[string]string{
+			"attempts": strconv.Itoa(pg.connAttempts),
+		})
 		time.Sleep(pg.connTimeout)
 		pg.connAttempts--
 	}
 
 	if err != nil {
-		err = fmt.Errorf("postgres - NewPostgres - connAttempts == 0: %w", err)
-		pg.logger.Error(err.Error())
+		pg.logger.ErrorAttrs("Postgres connection failed", err, map[string]string{
+			"host":    cfg.Postgres.Host,
+			"port":    strconv.Itoa(cfg.Postgres.Port),
+			"user":    cfg.Postgres.User,
+			"dbname":  cfg.Postgres.DBName,
+			"sslmode": cfg.Postgres.SSLMode,
+		})
 		return nil, err
 	}
 

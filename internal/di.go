@@ -2,17 +2,18 @@ package di
 
 import (
 	"github.com/iakigarci/go-ddd-microservice-template/config"
-	"go.uber.org/zap"
+	"github.com/iakigarci/go-ddd-microservice-template/pkg/logger"
 )
 
 // Container holds all the dependencies of the application
 type Container struct {
 	Config *config.Config
-	Logger *zap.Logger
+	Logger *logger.Logger
 }
 
-func NewContainer(cfg *config.Config,
-	logger *zap.Logger,
+func NewContainer(
+	cfg *config.Config,
+	logger *logger.Logger,
 ) *Container {
 	return &Container{
 		Config: cfg,

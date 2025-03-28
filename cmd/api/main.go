@@ -29,7 +29,7 @@ func main() {
 	shutdown(httpServer, container, logger)
 }
 
-func getDIContainer(cfg *config.Config, logger *zap.Logger) *di.Container {
+func getDIContainer(cfg *config.Config, logger *logger.Logger) *di.Container {
 	return di.NewContainer(cfg,
 		logger,
 	)
@@ -42,7 +42,7 @@ func startServers(cfg *config.Config, container *di.Container) *httpserver.Serve
 	return server
 }
 
-func shutdown(server *httpserver.Server, container *di.Container, log *zap.Logger) {
+func shutdown(server *httpserver.Server, container *di.Container, log *logger.Logger) {
 	if shutdownErr := server.Shutdown(); shutdownErr != nil {
 		log.Error("httpServer.Shutdown", zap.Error(shutdownErr))
 	}

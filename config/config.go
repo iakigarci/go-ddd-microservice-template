@@ -45,14 +45,14 @@ type HTTPConfig struct {
 }
 
 type DatabaseConfig struct {
-	Driver   string   `mapstructure:"driver"`
-	Host     string   `mapstructure:"host"`
-	Port     int      `mapstructure:"port"`
-	Name     string   `mapstructure:"name"`
-	User     string   `mapstructure:"user"`
-	Password Password `mapstructure:"password"`
-	SSLMode  string   `mapstructure:"ssl_mode"`
-	PoolMax  int      `mapstructure:"pool_max"`
+	Driver   string `mapstructure:"driver"`
+	Host     string `mapstructure:"host"`
+	Port     int    `mapstructure:"port"`
+	DBName   string `mapstructure:"db"`
+	User     string `mapstructure:"user"`
+	Password string `mapstructure:"password"`
+	SSLMode  string `mapstructure:"ssl_mode"`
+	PoolMax  int    `mapstructure:"pool_max"`
 }
 
 type LogConfig struct {
